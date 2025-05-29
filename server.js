@@ -20,11 +20,11 @@ import User from "./src/models/User.js";
 
 const app = express();
 
-// 🌐 Global CORS Configuration
+// 🌐 Global CORS Configuration to allow all origins
 const corsOptions = {
-  origin: process.env.CLIENT_ORIGIN || "http://localhost:3000",
+  origin: "*",
   methods: ["GET", "POST", "PUT", "DELETE"],
-  credentials: true,
+  credentials: false, // true if you want to allow cookies/credentials
 };
 app.use(cors(corsOptions));
 

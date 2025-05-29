@@ -52,3 +52,55 @@ export const getUserProfile = async (userId) => {
     throw error;
   }
 };
+
+/**
+ * Get user data (customers and orders)
+ */
+export const getUserData = async (userId) => {
+  try {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new Error('User not found');
+    }
+    
+    return {
+      customers: user.customers || [],
+      orders: user.orders || []
+    };
+  } catch (error) {
+    console.error('Error getting user data:', error);
+    throw error;
+  }
+};
+
+/**
+ * Save user data (customers and orders)
+ */
+export const saveUserData = async (userId, data) => {
+  try {
+    const updateData = {};
+    
+    if (data.customers) {
+      updateData.customers = data.customers;
+    }
+    
+    if (data.orders) {
+      updateData.orders = data.orders;
+    }
+    
+    const user = await User.findByIdAndUpdate(
+      userId,
+      updateData,
+      { new: true }
+    );
+    
+    if (!user) {
+      throw new Error('User not found');
+    }
+    
+    return user;
+  } catch (error) {
+    console.error('Error saving user data:', error);
+    throw error;
+  }
+};

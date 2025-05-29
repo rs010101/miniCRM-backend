@@ -8,7 +8,15 @@ const userSchema = new mongoose.Schema({
     unique: true
   },
   picture: String,
-  created_at: { type: Date, default: Date.now }
+  created_at: { type: Date, default: Date.now },
+  customers: {
+    type: Array,
+    default: []
+  },
+  orders: {
+    type: Array,
+    default: []
+  }
 });
 
 const User = mongoose.model('User', userSchema);

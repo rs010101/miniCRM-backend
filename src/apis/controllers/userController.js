@@ -39,3 +39,55 @@ export const updateUser = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
+/**
+ * Get user data (customers and orders)
+ */
+export const getUserData = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const userData = await userService.getUserData(userId);
+    res.json({
+      success: true,
+      data: userData
+    });
+  } catch (error) {
+    console.error('Error in getUserData controller:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to retrieve user data', 
+      error: error.message 
+    });
+  }
+};
+
+/**
+ * Save user data (customers and orders)
+ */
+export const saveUserData = async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { data } = req.body;
+    
+    if (!data) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No data provided' 
+      });
+    }
+    
+    await userService.saveUserData(userId, data);
+    
+    res.json({
+      success: true,
+      message: 'Data saved successfully'
+    });
+  } catch (error) {
+    console.error('Error in saveUserData controller:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to save user data', 
+      error: error.message 
+    });
+  }
+};

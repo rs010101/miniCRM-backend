@@ -1,2 +1,12 @@
 /node_modules
 /.env
+/.DS_Store
+/dist
+/.vscode
+/.idea
+/.cache
+/.eslintcache
+/.nyc_output
+/.coverage
+/.nycrc
+/.prettierignore

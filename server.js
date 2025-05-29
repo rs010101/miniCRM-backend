@@ -19,7 +19,15 @@ import communicationLogRoutes from './src/apis/routes/communicationLogRoutes.js'
 import User from "./src/models/User.js";
 
 const app = express();
-app.use(cors());
+
+// 🌐 Global CORS Configuration
+const corsOptions = {
+  origin: process.env.CLIENT_ORIGIN || "http://localhost:3000",
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
+};
+app.use(cors(corsOptions));
+
 app.use(express.json());
 
 // MongoDB Connection with better error handling
@@ -30,9 +38,9 @@ const connectDB = async () => {
     }
 
     const options = {
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
-      socketTimeoutMS: 45000, // Close sockets after 45s of inactivity
-      family: 4 // Use IPv4, skip trying IPv6
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000,
+      family: 4,
     };
 
     await mongoose.connect(process.env.MONGO_URI, options);
@@ -46,11 +54,11 @@ const connectDB = async () => {
       console.error("3. Verify your MongoDB username and password");
       console.error("\n🔗 MongoDB Atlas IP Whitelist: https://www.mongodb.com/docs/atlas/security-whitelist/");
     }
-    process.exit(1); // Exit if cannot connect to database
+    process.exit(1);
   }
 };
 
-// Connect to MongoDB before starting the server
+// Connect to MongoDB
 connectDB();
 
 // API Routes
@@ -66,7 +74,7 @@ const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 app.post("/api/auth/google", async (req, res) => {
   const { credential } = req.body;
-  
+
   if (!credential) {
     console.error("No credential provided in request");
     return res.status(400).json({ error: "No credential provided" });
@@ -79,7 +87,7 @@ app.post("/api/auth/google", async (req, res) => {
 
   try {
     console.log("Verifying token with client ID:", process.env.GOOGLE_CLIENT_ID);
-    
+
     const ticket = await client.verifyIdToken({
       idToken: credential,
       audience: process.env.GOOGLE_CLIENT_ID,
@@ -88,7 +96,6 @@ app.post("/api/auth/google", async (req, res) => {
     const payload = ticket.getPayload();
     console.log("Token verified successfully. Email:", payload.email);
 
-    // Find user by email or create a new one
     let user = await User.findOne({ email: payload.email });
     if (!user) {
       console.log("Creating new user for email:", payload.email);
@@ -100,7 +107,6 @@ app.post("/api/auth/google", async (req, res) => {
       await user.save();
     }
 
-    // Prepare JWT payload including MongoDB user _id
     const tokenPayload = {
       _id: user._id.toString(),
       name: user.name,
@@ -122,15 +128,16 @@ app.post("/api/auth/google", async (req, res) => {
     console.error("Error details:", {
       message: error.message,
       stack: error.stack,
-      name: error.name
+      name: error.name,
     });
     res.status(401).json({ error: "Invalid token", details: error.message });
   }
 });
 
-// Start server
+// Start Server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
+// Debug Environment
 console.log("🔑 GOOGLE_CLIENT_ID:", process.env.GOOGLE_CLIENT_ID);
 console.log("🔑 JWT_SECRET:", process.env.JWT_SECRET ? "Loaded" : "Missing");

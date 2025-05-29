@@ -1,31 +1,100 @@
+/**
+ * @swagger
+ * tags:
+ *   name: Orders
+ *   description: Order management
+ */
+
 import express from 'express';
 import * as orderController from '../controllers/orderController.js';
 import authMiddleware from '../../middlewares/auth.js';
 
 const router = express.Router();
-
-// Apply auth middleware to all routes
 router.use(authMiddleware);
 
-// Get all orders
+/**
+ * @swagger
+ * /api/orders:
+ *   get:
+ *     summary: Get all orders
+ *     tags: [Orders]
+ *     responses:
+ *       200:
+ *         description: Orders retrieved
+ *   post:
+ *     summary: Create a new order
+ *     tags: [Orders]
+ *     responses:
+ *       201:
+ *         description: Order created
+ */
 router.get('/', orderController.getOrders);
-
-// Get a single order by ID
-router.get('/:id', orderController.getOrderById);
-
-// Add a new order
 router.post('/', orderController.addOrder);
 
-// Update an existing order
+/**
+ * @swagger
+ * /api/orders/{id}:
+ *   get:
+ *     summary: Get order by ID
+ *     tags: [Orders]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Order details
+ *   put:
+ *     summary: Update order by ID
+ *     tags: [Orders]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Order updated
+ *   delete:
+ *     summary: Delete order by ID
+ *     tags: [Orders]
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Order deleted
+ */
+router.get('/:id', orderController.getOrderById);
 router.put('/:id', orderController.updateOrder);
-
-// Delete an order
 router.delete('/:id', orderController.deleteOrder);
 
-// Get orders for a specific customer
+/**
+ * @swagger
+ * /api/orders/customer/{customerId}:
+ *   get:
+ *     summary: Get orders for a specific customer
+ *     tags: [Orders]
+ *     parameters:
+ *       - name: customerId
+ *         in: path
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Customer orders retrieved
+ */
 router.get('/customer/:customerId', orderController.getCustomerOrders);
 
-// Bulk import orders
+/**
+ * @swagger
+ * /api/orders/bulk-import:
+ *   post:
+ *     summary: Bulk import orders
+ *     tags: [Orders]
+ *     responses:
+ *       200:
+ *         description: Orders imported
+ */
 router.post('/bulk-import', orderController.bulkImportOrders);
 
 export default router;

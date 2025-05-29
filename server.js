@@ -1,3 +1,5 @@
+import swaggerJsdoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -29,6 +31,27 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use(express.json());
+
+const swaggerOptions = {
+  definition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'Your API Docs',
+      version: '1.0.0',
+      description: 'API documentation for the backend project'
+    },
+    servers: [
+      {
+        url: 'http://localhost:5000', // or your deployed URL
+      },
+    ],
+  },
+  apis: ['./src/apis/routes/*.js'], // <--- location of JSDoc comments
+};
+
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 
 // MongoDB Connection with better error handling
 const connectDB = async () => {

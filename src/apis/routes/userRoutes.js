@@ -1,22 +1,59 @@
+/**
+ * @swagger
+ * tags:
+ *   name: User
+ *   description: User profile and data operations
+ */
+
 import express from 'express';
 import * as userController from '../controllers/userController.js';
 import authMiddleware from '../../middlewares/auth.js';
 
 const router = express.Router();
 
-// Apply auth middleware to all routes
 router.use(authMiddleware);
 
-// Get user profile
+/**
+ * @swagger
+ * /api/user/profile:
+ *   get:
+ *     summary: Get user profile
+ *     tags: [User]
+ *     responses:
+ *       200:
+ *         description: User profile fetched successfully
+ */
 router.get('/profile', userController.getUserProfile);
 
-// Update user data
+/**
+ * @swagger
+ * /api/user:
+ *   put:
+ *     summary: Update user data
+ *     tags: [User]
+ *     responses:
+ *       200:
+ *         description: User data updated
+ */
 router.put('/', userController.updateUser);
 
-// Get user data (customers and orders)
+/**
+ * @swagger
+ * /api/user/data:
+ *   get:
+ *     summary: Get user-related customer and order data
+ *     tags: [User]
+ *     responses:
+ *       200:
+ *         description: Data fetched
+ *   post:
+ *     summary: Save user-related customer and order data
+ *     tags: [User]
+ *     responses:
+ *       201:
+ *         description: Data saved
+ */
 router.get('/data', userController.getUserData);
-
-// Save user data (customers and orders)
 router.post('/data', userController.saveUserData);
 
 export default router;

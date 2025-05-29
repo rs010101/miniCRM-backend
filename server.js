@@ -69,6 +69,11 @@ app.use('/api/segment-rules', segmentRuleRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/communication-logs', communicationLogRoutes);
 
+// Add root route to avoid 404 on "/"
+app.get("/", (req, res) => {
+  res.send("🚀 API is running!");
+});
+
 // Google OAuth Authentication
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 

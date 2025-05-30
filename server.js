@@ -1,6 +1,7 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 import swaggerUi from 'swagger-ui-express';
 import dotenv from "dotenv";
+
 dotenv.config();
 
 import express from "express";
@@ -16,6 +17,7 @@ import orderRoutes from './src/apis/routes/orderRoutes.js';
 import segmentRuleRoutes from './src/apis/routes/segmentRuleRoutes.js';
 import campaignRoutes from './src/apis/routes/campaignRoutes.js';
 import communicationLogRoutes from './src/apis/routes/communicationLogRoutes.js';
+import deliveryReceiptRoutes from './src/apis/routes/deliveryReceiptRoutes.js';
 
 // Import models
 import User from "./src/models/User.js";
@@ -91,6 +93,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/segment-rules', segmentRuleRoutes);
 app.use('/api/campaigns', campaignRoutes);
 app.use('/api/communication-logs', communicationLogRoutes);
+app.use('/api/delivery-receipts', deliveryReceiptRoutes);
 
 // Add root route to avoid 404 on "/"
 app.get("/", (req, res) => {

@@ -1,4 +1,7 @@
 import * as campaignService from '../services/campaignService.js';
+import mongoose from 'mongoose';
+import Campaign from '../models/Campaign.js';
+import CommunicationLog from '../models/CommunicationLog.js';
 
 /**
  * Get all campaigns for a user
@@ -120,32 +123,58 @@ export const sendCampaignMessages = async (req, res) => {
  */
 export const getCampaignStats = async (req, res) => {
   try {
+    const { campaignId } = req.params;
     const userId = req.user._id;
-    const campaignId = req.params.id;
-    
-    try {
-      const stats = await campaignService.getCampaignStats(userId, campaignId);
-      res.json(stats);
-    } catch (statsError) {
-      // Handle not found or invalid ID gracefully
-      if (statsError.message && statsError.message.includes('not found')) {
-        return res.status(404).json({ 
-          message: `Campaign not found: ${campaignId}`, 
-          error: statsError.message 
-        });
-      }
-      // Handle invalid ObjectId gracefully
-      if (statsError.name === 'CastError') {
-        return res.status(400).json({ 
-          message: `Invalid campaign ID format: ${campaignId}`, 
-          error: statsError.message 
-        });
-      }
-      throw statsError; // Re-throw other errors
+
+    // Validate campaign exists and belongs to user
+    const campaign = await Campaign.findOne({ _id: campaignId, userId });
+    if (!campaign) {
+      return res.status(404).json({
+        success: false,
+        error: 'Campaign not found'
+      });
     }
+
+    // Get stats from communication logs
+    const stats = await CommunicationLog.aggregate([
+      { 
+        $match: { 
+          campaignId: mongoose.Types.ObjectId(campaignId)
+        }
+      },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    // Format stats in a consistent way
+    const formattedStats = {
+      delivered: 0,
+      failed: 0,
+      pending: 0,
+      total: 0
+    };
+
+    stats.forEach(({ _id, count }) => {
+      formattedStats[_id.toLowerCase()] = count;
+    });
+
+    formattedStats.total = Object.values(formattedStats).reduce((sum, count) => sum + count, 0);
+
+    res.json({
+      success: true,
+      stats: formattedStats
+    });
+
   } catch (error) {
-    console.error('Error in getCampaignStats controller:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error('Error fetching campaign stats:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch campaign statistics'
+    });
   }
 };
 

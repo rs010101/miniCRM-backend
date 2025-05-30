@@ -1,4 +1,8 @@
+import Campaign from '../../models/Campaign.js';
 import CommunicationLog from '../../models/CommunicationLog.js';
+import Customer from '../../models/Customer.js';
+import { sendMessage } from './vendorApiService.js';
+import { messageQueue } from '../../services/messageQueueService.js';
 
 /**
  * Get all communication logs for a user
@@ -128,3 +132,147 @@ export const getLogStats = async (userId, filters = {}) => {
     throw error;
   }
 };
+
+/**
+ * Create a campaign with associated communication logs
+ */
+export const createCampaignWithLogs = async (userId, campaignData) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    // Create campaign
+    const campaign = new Campaign({
+      userId,
+      ...campaignData,
+      status: 'processing'
+    });
+    await campaign.save({ session });
+
+    // Get customers from segment
+    const customers = await Customer.find({
+      segmentRuleId: campaignData.segmentRuleId
+    })
+    .populate('name')  // Make sure we have customer names
+    .session(session);
+
+    // Create communication logs and send messages for each customer
+    const logs = await Promise.all(customers.map(async customer => {
+      // Personalize message
+      const personalizedMessage = campaignData.message.replace(
+        '{name}', 
+        customer.name || 'valued customer'
+      );
+
+      // Create log entry
+      const log = new CommunicationLog({
+        campaignId: campaign._id,
+        customerId: customer._id,
+        userId,
+        message: personalizedMessage,
+        status: 'pending'
+      });
+      
+      try {
+        // Send message via vendor API
+        const result = await sendMessage(customer.name, personalizedMessage);
+        
+        // Update log with success
+        log.status = 'sent';
+        log.sent_at = result.timestamp;
+        log.metadata = { messageId: result.messageId };
+      } catch (error) {
+        // Update log with failure
+        log.status = 'failed';
+        log.failed_at = new Date();
+        log.error = error.message;
+      }
+
+      await log.save({ session });
+      return log;
+    }));
+
+    // Update campaign status
+    campaign.status = 'completed';
+    await campaign.save({ session });
+
+    await session.commitTransaction();
+    
+    return {
+      campaign,
+      logs,
+      summary: {
+        total: logs.length,
+        sent: logs.filter(log => log.status === 'sent').length,
+        failed: logs.filter(log => log.status === 'failed').length
+      }
+    };
+
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
+};
+
+/**
+ * Update delivery status of a message
+ */
+export const updateDeliveryStatus = async (messageId, status, metadata = {}) => {
+  try {
+    // Find the log first to get campaignId
+    const log = await CommunicationLog.findOne({ messageId });
+    
+    if (!log) {
+      throw new Error(`No communication log found for messageId: ${messageId}`);
+    }
+
+    // Queue the update
+    await messageQueue.enqueue({
+      messageId,
+      campaignId: log.campaignId,
+      status,
+      metadata
+    });
+
+    return { 
+      success: true, 
+      message: 'Update queued for processing',
+      messageId,
+      status
+    };
+  } catch (error) {
+    console.error('Error queueing delivery status update:', error);
+    throw error;
+  }
+};
+
+// Helper function to update campaign statistics
+async function updateCampaignStats(campaignId) {
+  try {
+    const stats = await CommunicationLog.aggregate([
+      { $match: { campaignId } },
+      {
+        $group: {
+          _id: '$status',
+          count: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const statusCounts = stats.reduce((acc, { _id, count }) => {
+      acc[_id] = count;
+      return acc;
+    }, {});
+
+    await Campaign.findByIdAndUpdate(campaignId, {
+      $set: {
+        stats: statusCounts,
+        updatedAt: new Date()
+      }
+    });
+  } catch (error) {
+    console.error('Error updating campaign stats:', error);
+  }
+}

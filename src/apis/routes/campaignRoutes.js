@@ -133,22 +133,21 @@ router.post('/:id/send', campaignController.sendCampaignMessages);
 
 /**
  * @swagger
- * /api/campaigns/{id}/stats:
+ * /api/campaigns/{campaignId}/stats:
  *   get:
  *     summary: Get campaign statistics
  *     tags: [Campaigns]
  *     parameters:
  *       - in: path
- *         name: id
+ *         name: campaignId
  *         required: true
  *         schema:
  *           type: string
- *         description: Campaign ID
  *     responses:
  *       200:
- *         description: Campaign stats
+ *         description: Campaign statistics retrieved successfully
  */
-router.get('/:id/stats', campaignController.getCampaignStats);
+router.get('/:campaignId/stats', authMiddleware, campaignController.getCampaignStats);
 
 /**
  * @swagger

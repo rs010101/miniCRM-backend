@@ -11,10 +11,28 @@ const campaignSchema = new mongoose.Schema({
     ref: 'SegmentRule',
     required: true
   },
-  name: String,
+  name: {
+    type: String,
+    required: true
+  },
   intent: String,
-  message: String,
-  created_at: { type: Date, default: Date.now }
+  message: {
+    type: String,
+    required: true
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'processing', 'completed', 'failed'],
+    default: 'pending'
+  },
+  created_at: { type: Date, default: Date.now },
+  updated_at: { type: Date }
+});
+
+// Add pre-save middleware to update the updated_at field
+campaignSchema.pre('save', function(next) {
+  this.updated_at = new Date();
+  next();
 });
 
 const Campaign = mongoose.model('Campaign', campaignSchema);

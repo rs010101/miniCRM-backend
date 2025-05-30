@@ -1,8 +1,8 @@
 import Campaign from '../../models/Campaign.js';
 import CommunicationLog from '../../models/CommunicationLog.js';
 import Customer from '../../models/Customer.js';
-import { sendMessage } from './vendorApiService.js';
-import { messageQueue } from '../../services/messageQueueService.js';
+import { sendMessage } from './vendorApi.js';
+import { messageQueue } from './messageQueueService.js';
 
 /**
  * Get all communication logs for a user

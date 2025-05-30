@@ -1,7 +1,7 @@
 import * as campaignService from '../services/campaignService.js';
 import mongoose from 'mongoose';
-import Campaign from '../models/Campaign.js';
-import CommunicationLog from '../models/CommunicationLog.js';
+import Campaign from '../../models/Campaign.js';
+import CommunicationLog from '../../models/CommunicationLog.js';
 
 /**
  * Get all campaigns for a user

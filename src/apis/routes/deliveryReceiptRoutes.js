@@ -1,6 +1,6 @@
 import express from 'express';
 import * as deliveryReceiptController from '../controllers/deliveryReceiptController.js';
-import { messageQueue } from '../../services/messageQueueService.js';
+import { messageQueue } from '../services/messageQueueService.js';
 
 const router = express.Router();
 

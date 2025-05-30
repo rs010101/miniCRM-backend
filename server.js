@@ -9,6 +9,7 @@ import mongoose from "mongoose";
 import cors from "cors";
 import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
+import { redisClient } from './src/utils/redisClient.js';
 
 // Import routes
 import userRoutes from './src/apis/routes/userRoutes.js';
@@ -164,6 +165,40 @@ app.post("/api/auth/google", async (req, res) => {
     res.status(401).json({ error: "Invalid token", details: error.message });
   }
 });
+
+// Redis connection handling
+redisClient.on('error', (err) => {
+  console.error('Redis Error:', err);
+  // Don't crash the server on Redis errors, just log them
+});
+
+redisClient.on('connect', () => {
+  console.log('Connected to Redis server');
+});
+
+// Graceful shutdown handling
+const gracefulShutdown = async () => {
+  console.log('Received shutdown signal');
+  
+  try {
+    // Disconnect Redis
+    await redisClient.quit();
+    console.log('Redis client disconnected');
+    
+    // Close MongoDB connection
+    await mongoose.connection.close();
+    console.log('MongoDB connection closed');
+    
+    process.exit(0);
+  } catch (error) {
+    console.error('Error during shutdown:', error);
+    process.exit(1);
+  }
+};
+
+// Handle different shutdown signals
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
 
 // Start Server
 const PORT = process.env.PORT || 5000;

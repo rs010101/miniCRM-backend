@@ -3,15 +3,35 @@ import CommunicationLog from '../../models/CommunicationLog.js';
 import Customer from '../../models/Customer.js';
 import { sendMessage } from './vendorApi.js';
 import { messageQueue } from './messageQueueService.js';
+import { getCache, setCache, deleteCache, CACHE_KEYS } from '../../utils/redisClient.js';
+
+// Cache key generators for communication logs
+const COMM_LOG_CACHE_KEYS = {
+  LOGS_BY_USER: (userId) => `${CACHE_KEYS.USER}${userId}:logs`,
+  LOGS_BY_CAMPAIGN: (campaignId) => `${CACHE_KEYS.CAMPAIGN}${campaignId}:logs`,
+  LOGS_BY_CUSTOMER: (customerId) => `${CACHE_KEYS.CUSTOMER}${customerId}:logs`,
+};
 
 /**
  * Get all communication logs for a user
  */
 export const getCommunicationLogs = async (userId) => {
   try {
+    // Try to get from cache first
+    const cacheKey = COMM_LOG_CACHE_KEYS.LOGS_BY_USER(userId);
+    const cachedData = await getCache(cacheKey);
+    
+    if (cachedData) {
+      return cachedData;
+    }
+
     const logs = await CommunicationLog.find({ userId })
       .populate('campaignId')
       .populate('customerId');
+    
+    // Cache for 15 minutes since communication logs update frequently
+    await setCache(cacheKey, logs, 900);
+    
     return logs;
   } catch (error) {
     console.error('Error getting communication logs:', error);
@@ -24,8 +44,20 @@ export const getCommunicationLogs = async (userId) => {
  */
 export const getCampaignLogs = async (userId, campaignId) => {
   try {
+    // Try to get from cache first
+    const cacheKey = COMM_LOG_CACHE_KEYS.LOGS_BY_CAMPAIGN(campaignId);
+    const cachedData = await getCache(cacheKey);
+    
+    if (cachedData) {
+      return cachedData;
+    }
+
     const logs = await CommunicationLog.find({ userId, campaignId })
       .populate('customerId');
+    
+    // Cache for 15 minutes
+    await setCache(cacheKey, logs, 900);
+    
     return logs;
   } catch (error) {
     console.error('Error getting campaign logs:', error);
@@ -38,8 +70,20 @@ export const getCampaignLogs = async (userId, campaignId) => {
  */
 export const getCustomerLogs = async (userId, customerId) => {
   try {
+    // Try to get from cache first
+    const cacheKey = COMM_LOG_CACHE_KEYS.LOGS_BY_CUSTOMER(customerId);
+    const cachedData = await getCache(cacheKey);
+    
+    if (cachedData) {
+      return cachedData;
+    }
+
     const logs = await CommunicationLog.find({ userId, customerId })
       .populate('campaignId');
+    
+    // Cache for 15 minutes
+    await setCache(cacheKey, logs, 900);
+    
     return logs;
   } catch (error) {
     console.error('Error getting customer logs:', error);
@@ -54,6 +98,16 @@ export const createCommunicationLog = async (logData) => {
   try {
     const log = new CommunicationLog(logData);
     await log.save();
+    
+    // Invalidate related caches
+    await deleteCache(COMM_LOG_CACHE_KEYS.LOGS_BY_USER(logData.userId));
+    if (logData.campaignId) {
+      await deleteCache(COMM_LOG_CACHE_KEYS.LOGS_BY_CAMPAIGN(logData.campaignId));
+    }
+    if (logData.customerId) {
+      await deleteCache(COMM_LOG_CACHE_KEYS.LOGS_BY_CUSTOMER(logData.customerId));
+    }
+    
     return log;
   } catch (error) {
     console.error('Error creating communication log:', error);

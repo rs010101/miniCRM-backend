@@ -1,12 +1,33 @@
 import Order from '../../models/Order.js';
 import Customer from '../../models/Customer.js';
+import { getCache, setCache, deleteCache, CACHE_KEYS } from '../../utils/redisClient.js';
+
+// Cache key generators
+const ORDER_CACHE_KEYS = {
+  ORDERS_BY_USER: (userId) => `${CACHE_KEYS.ORDER}user:${userId}`,
+  ORDER_BY_ID: (orderId) => `${CACHE_KEYS.ORDER}${orderId}`,
+  CUSTOMER_ORDERS: (customerId) => `${CACHE_KEYS.ORDER}customer:${customerId}`,
+};
 
 /**
  * Get all orders for a user
  */
 export const getOrders = async (userId) => {
   try {
+    // Try to get from cache first
+    const cacheKey = ORDER_CACHE_KEYS.ORDERS_BY_USER(userId);
+    const cachedData = await getCache(cacheKey);
+    
+    if (cachedData) {
+      return cachedData;
+    }
+
+    // If not in cache, get from database
     const orders = await Order.find({ userId }).populate('customerId');
+    
+    // Store in cache for future requests (1 hour expiry)
+    await setCache(cacheKey, orders, 3600);
+    
     return orders;
   } catch (error) {
     console.error('Error getting orders:', error);
@@ -42,7 +63,14 @@ export const addOrder = async (userId, orderData) => {
           $set: { last_active: new Date() }
         }
       );
+      
+      // Invalidate customer-related caches
+      await deleteCache(`${CACHE_KEYS.CUSTOMER}${orderData.customerId}`);
+      await deleteCache(ORDER_CACHE_KEYS.CUSTOMER_ORDERS(orderData.customerId));
     }
+    
+    // Invalidate user's orders cache
+    await deleteCache(ORDER_CACHE_KEYS.ORDERS_BY_USER(userId));
     
     return order;
   } catch (error) {

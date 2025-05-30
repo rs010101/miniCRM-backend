@@ -1,11 +1,30 @@
 import Customer from '../../models/Customer.js';
+import { getCache, setCache, deleteCache } from '../../utils/redisClient.js';
+
+const CACHE_KEYS = {
+  CUSTOMERS_BY_USER: (userId) => `customers:user:${userId}`,
+  CUSTOMER_BY_ID: (customerId) => `customer:${customerId}`,
+};
 
 /**
  * Get all customers for a user
  */
 export const getCustomers = async (userId) => {
   try {
+    // Try to get from cache first
+    const cacheKey = CACHE_KEYS.CUSTOMERS_BY_USER(userId);
+    const cachedData = await getCache(cacheKey);
+    
+    if (cachedData) {
+      return cachedData;
+    }
+
+    // If not in cache, get from database
     const customers = await Customer.find({ userId });
+    
+    // Store in cache for future requests
+    await setCache(cacheKey, customers);
+    
     return customers;
   } catch (error) {
     console.error('Error getting customers:', error);
@@ -23,6 +42,10 @@ export const addCustomer = async (userId, customerData) => {
       ...customerData
     });
     await customer.save();
+    
+    // Invalidate the user's customers cache
+    await deleteCache(CACHE_KEYS.CUSTOMERS_BY_USER(userId));
+    
     return customer;
   } catch (error) {
     console.error('Error adding customer:', error);
@@ -40,6 +63,14 @@ export const updateCustomer = async (customerId, customerData) => {
       customerData,
       { new: true }
     );
+    
+    if (customer) {
+      // Update cache for individual customer
+      await setCache(CACHE_KEYS.CUSTOMER_BY_ID(customerId), customer);
+      // Invalidate user's customers list cache
+      await deleteCache(CACHE_KEYS.CUSTOMERS_BY_USER(customer.userId));
+    }
+    
     return customer;
   } catch (error) {
     console.error('Error updating customer:', error);
@@ -65,7 +96,20 @@ export const deleteCustomer = async (customerId) => {
  */
 export const getCustomerById = async (customerId) => {
   try {
+    // Try to get from cache first
+    const cacheKey = CACHE_KEYS.CUSTOMER_BY_ID(customerId);
+    const cachedData = await getCache(cacheKey);
+    
+    if (cachedData) {
+      return cachedData;
+    }
+
+    // If not in cache, get from database
     const customer = await Customer.findById(customerId);
+    
+    // Store in cache for future requests
+    await setCache(cacheKey, customer);
+    
     return customer;
   } catch (error) {
     console.error('Error getting customer:', error);

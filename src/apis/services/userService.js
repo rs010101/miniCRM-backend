@@ -1,11 +1,33 @@
 import User from '../../models/User.js';
+import { getCache, setCache, deleteCache, CACHE_KEYS } from '../../utils/redisClient.js';
+
+// Cache key generators for user-related data
+const USER_CACHE_KEYS = {
+  USER_BY_ID: (userId) => `${CACHE_KEYS.USER}${userId}`,
+  USER_PROFILE: (userId) => `${CACHE_KEYS.USER}${userId}:profile`,
+};
 
 /**
  * Get user data by ID
  */
 export const getUserById = async (userId) => {
   try {
+    // Try to get from cache first
+    const cacheKey = USER_CACHE_KEYS.USER_BY_ID(userId);
+    const cachedData = await getCache(cacheKey);
+    
+    if (cachedData) {
+      return cachedData;
+    }
+
+    // If not in cache, get from database
     const user = await User.findById(userId);
+    
+    if (user) {
+      // Store in cache for future requests (24 hours expiry)
+      await setCache(cacheKey, user, 86400);
+    }
+    
     return user;
   } catch (error) {
     console.error('Error getting user:', error);
@@ -23,6 +45,13 @@ export const updateUser = async (userId, userData) => {
       userData,
       { new: true }
     );
+    
+    if (user) {
+      // Update user caches
+      await setCache(USER_CACHE_KEYS.USER_BY_ID(userId), user, 86400);
+      await deleteCache(USER_CACHE_KEYS.USER_PROFILE(userId));
+    }
+    
     return user;
   } catch (error) {
     console.error('Error updating user:', error);
@@ -35,18 +64,31 @@ export const updateUser = async (userId, userData) => {
  */
 export const getUserProfile = async (userId) => {
   try {
+    // Try to get from cache first
+    const cacheKey = USER_CACHE_KEYS.USER_PROFILE(userId);
+    const cachedData = await getCache(cacheKey);
+    
+    if (cachedData) {
+      return cachedData;
+    }
+
     const user = await User.findById(userId);
     if (!user) {
       throw new Error('User not found');
     }
     
-    return {
+    const profile = {
       _id: user._id,
       name: user.name,
       email: user.email,
       picture: user.picture,
       created_at: user.created_at
     };
+    
+    // Store in cache for future requests (24 hours expiry)
+    await setCache(cacheKey, profile, 86400);
+    
+    return profile;
   } catch (error) {
     console.error('Error getting user profile:', error);
     throw error;

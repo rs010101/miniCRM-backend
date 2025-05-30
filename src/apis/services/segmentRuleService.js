@@ -1,12 +1,33 @@
 import SegmentRule from '../../models/SegmentRule.js';
 import Customer from '../../models/Customer.js';
+import { getCache, setCache, deleteCache, deleteCachePattern, CACHE_KEYS } from '../../utils/redisClient.js';
+
+// Cache key generators
+const SEGMENT_CACHE_KEYS = {
+  SEGMENTS_BY_USER: (userId) => `${CACHE_KEYS.SEGMENT}user:${userId}`,
+  SEGMENT_BY_ID: (segmentId) => `${CACHE_KEYS.SEGMENT}${segmentId}`,
+  SEGMENT_CUSTOMERS: (segmentId) => `${CACHE_KEYS.SEGMENT}${segmentId}:customers`,
+};
 
 /**
  * Get all segment rules for a user
  */
 export const getSegmentRules = async (userId) => {
   try {
+    // Try to get from cache first
+    const cacheKey = SEGMENT_CACHE_KEYS.SEGMENTS_BY_USER(userId);
+    const cachedData = await getCache(cacheKey);
+    
+    if (cachedData) {
+      return cachedData;
+    }
+
+    // If not in cache, get from database
     const segmentRules = await SegmentRule.find({ userId });
+    
+    // Store in cache for future requests (1 hour expiry)
+    await setCache(cacheKey, segmentRules, 3600);
+    
     return segmentRules;
   } catch (error) {
     console.error('Error getting segment rules:', error);
@@ -19,7 +40,22 @@ export const getSegmentRules = async (userId) => {
  */
 export const getSegmentRuleById = async (ruleId) => {
   try {
+    // Try to get from cache first
+    const cacheKey = SEGMENT_CACHE_KEYS.SEGMENT_BY_ID(ruleId);
+    const cachedData = await getCache(cacheKey);
+    
+    if (cachedData) {
+      return cachedData;
+    }
+
+    // If not in cache, get from database
     const segmentRule = await SegmentRule.findById(ruleId);
+    
+    if (segmentRule) {
+      // Store in cache for future requests (1 hour expiry)
+      await setCache(cacheKey, segmentRule, 3600);
+    }
+    
     return segmentRule;
   } catch (error) {
     console.error('Error getting segment rule:', error);
@@ -40,6 +76,10 @@ export const createSegmentRule = async (userId, ruleData) => {
     });
     
     await segmentRule.save();
+    
+    // Invalidate user's segments cache
+    await deleteCache(SEGMENT_CACHE_KEYS.SEGMENTS_BY_USER(userId));
+    
     return segmentRule;
   } catch (error) {
     console.error('Error creating segment rule:', error);

@@ -126,6 +126,14 @@ export const getCampaignStats = async (req, res) => {
     const { campaignId } = req.params;
     const userId = req.user._id;
 
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(campaignId)) {
+      return res.status(400).json({
+        success: false,
+        error: 'Invalid campaign ID format'
+      });
+    }
+
     // Validate campaign exists and belongs to user
     const campaign = await Campaign.findOne({ _id: campaignId, userId });
     if (!campaign) {
@@ -135,11 +143,11 @@ export const getCampaignStats = async (req, res) => {
       });
     }
 
-    // Get stats from communication logs
+    // Get stats from communication logs with proper ObjectId conversion
     const stats = await CommunicationLog.aggregate([
       { 
         $match: { 
-          campaignId: mongoose.Types.ObjectId(campaignId)
+          campaignId: new mongoose.Types.ObjectId(campaignId)
         }
       },
       {
@@ -159,21 +167,28 @@ export const getCampaignStats = async (req, res) => {
     };
 
     stats.forEach(({ _id, count }) => {
-      formattedStats[_id.toLowerCase()] = count;
+      if (_id) {
+        formattedStats[_id.toLowerCase()] = count;
+      }
     });
 
     formattedStats.total = Object.values(formattedStats).reduce((sum, count) => sum + count, 0);
 
     res.json({
       success: true,
-      stats: formattedStats
+      stats: formattedStats,
+      campaign: {
+        name: campaign.name,
+        message: campaign.message,
+        createdAt: campaign.createdAt || campaign.created_at
+      }
     });
 
   } catch (error) {
     console.error('Error fetching campaign stats:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to fetch campaign statistics'
+      error: error.message || 'Failed to fetch campaign statistics'
     });
   }
 };

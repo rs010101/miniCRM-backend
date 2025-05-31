@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5000';
+const BACKEND_URL = process.env.BACKEND_URL;
 
 export const sendMessage = async (customer, message) => {
   // Simulate network delay (500-2000ms)

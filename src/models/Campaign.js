@@ -23,7 +23,7 @@ const campaignSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['pending', 'processing', 'completed', 'failed'],
-    default: 'pending'
+    default: 'processing',
   },
   created_at: { type: Date, default: Date.now },
   updated_at: { type: Date }

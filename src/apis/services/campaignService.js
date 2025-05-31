@@ -1,48 +1,32 @@
 import Campaign from '../../models/Campaign.js';
 import CommunicationLog from '../../models/CommunicationLog.js';
 import { getSegmentRuleById, getCustomersForSegment } from './segmentRuleService.js';
-import { getCache, setCache, deleteCache, CACHE_KEYS } from '../../utils/redisClient.js';
 import axios from 'axios';
-
-// Cache key generators
-const CAMPAIGN_CACHE_KEYS = {
-  CAMPAIGNS_BY_USER: (userId) => `${CACHE_KEYS.CAMPAIGN}user:${userId}`,
-  CAMPAIGN_BY_ID: (campaignId) => `${CACHE_KEYS.CAMPAIGN}${campaignId}`,
-  CAMPAIGN_STATS: (campaignId) => `${CACHE_KEYS.CAMPAIGN}${campaignId}:stats`,
-};
 
 /**
  * Get all campaigns for a user
  */
 export const getCampaigns = async (userId) => {
   try {
-    // Try to get from cache first
-    const cacheKey = CAMPAIGN_CACHE_KEYS.CAMPAIGNS_BY_USER(userId);
-    const cachedData = await getCache(cacheKey);
-    
-    if (cachedData) {
-      return cachedData;
-    }
-
-    // If not in cache, get from database
+    // Populate the segmentRuleId field to get segment names
     const campaigns = await Campaign.find({ userId }).populate('segmentRuleId');
     
-    // Format the response
-    const formattedCampaigns = campaigns.map(campaign => {
+    // Format the response to include helpful fields
+    return campaigns.map(campaign => {
       const formattedCampaign = campaign.toObject();
+      
+      // Add segmentName as a direct property for easier access
       if (campaign.segmentRuleId && campaign.segmentRuleId.name) {
         formattedCampaign.segmentName = campaign.segmentRuleId.name;
       }
+      
+      // Ensure createdAt is available for frontend display
       if (campaign.created_at && !campaign.createdAt) {
         formattedCampaign.createdAt = campaign.created_at;
       }
+      
       return formattedCampaign;
     });
-    
-    // Store in cache for future requests (1 hour expiry)
-    await setCache(cacheKey, formattedCampaigns, 3600);
-    
-    return formattedCampaigns;
   } catch (error) {
     console.error('Error getting campaigns:', error);
     throw error;
@@ -60,10 +44,6 @@ export const createCampaign = async (userId, campaignData) => {
     });
     
     await campaign.save();
-    
-    // Invalidate user's campaigns cache
-    await deleteCache(CAMPAIGN_CACHE_KEYS.CAMPAIGNS_BY_USER(userId));
-    
     return campaign;
   } catch (error) {
     console.error('Error creating campaign:', error);

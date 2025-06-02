@@ -224,7 +224,8 @@ export const createCampaignWithLogs = async (userId, campaignData) => {
         customerId: customer._id,
         userId,
         message: personalizedMessage,
-        status: 'pending'
+        status: 'delivered',
+        delivered_at: new Date()
       });
       
       try {

@@ -55,10 +55,12 @@ A powerful, scalable backend service for the MiniCRM application, built with Nod
 \`\`\`env
 # Database Configuration
 MONGO_URI=your_mongodb_connection_string
+
 REDIS_URL=your_redis_url
 
 # Authentication
 GOOGLE_CLIENT_ID=your_google_client_id
+
 JWT_SECRET=your_jwt_secret
 
 # API Keys
@@ -66,8 +68,10 @@ GEMINI_API=your_gemini_api_key
 
 # Application Settings
 PORT=5000
-BACKEND_URL=http://localhost:5000
-FRONTEND_URL=http://localhost:3000
+
+BACKEND_URL=your_backend_url
+
+FRONTEND_URL=your_frontend_url
 \`\`\`
 
 ### Installation Steps 📥

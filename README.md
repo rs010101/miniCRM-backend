@@ -74,7 +74,7 @@ FRONTEND_URL=http://localhost:3000
 
 1. **Clone the Repository**
    ```powershell
-   git clone https://github.com/radhikasinghal/miniCRM.git
+   git clone https://github.com/rs010101/miniCRM-backend
    Set-Location miniCRM/backend
    ```
 

@@ -45,8 +45,13 @@ const swaggerOptions = {
     },
     servers: [
       {
-        url: 'http://localhost:5000', // or your deployed URL
+        url: 'https://minicrm-backend-1.onrender.com',
+        description: 'Production server'
       },
+      {
+        url: 'http://localhost:5000',
+        description: 'Local development server'
+      }
     ],
   },
   apis: ['./src/apis/routes/*.js'], // <--- location of JSDoc comments

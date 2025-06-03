@@ -18,15 +18,23 @@ router.use(authMiddleware);
  *   get:
  *     summary: Get all customers
  *     tags: [Customers]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Customer list
+ *       401:
+ *         description: Unauthorized - No token provided or invalid token
  *   post:
  *     summary: Add a new customer
  *     tags: [Customers]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       201:
  *         description: Customer created
+ *       401:
+ *         description: Unauthorized - No token provided or invalid token
  */
 router.get('/', customerController.getCustomers);
 router.post('/', customerController.addCustomer);

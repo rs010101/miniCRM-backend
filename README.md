@@ -2,11 +2,6 @@
 
 A powerful, scalable backend service for the MiniCRM application, built with Node.js, Express, and MongoDB.
 
-![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
-![Express.js](https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white)
-![MongoDB](https://img.shields.io/badge/MongoDB-47A248?style=for-the-badge&logo=mongodb&logoColor=white)
-![Redis](https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white)
-
 ## 📋 Features
 
 - 🔐 **Authentication & Authorization**
@@ -42,7 +37,7 @@ A powerful, scalable backend service for the MiniCRM application, built with Nod
 - **Database**: MongoDB with Mongoose ODM
 - **Caching**: Redis
 - **Authentication**: JWT & Google OAuth
-- **API Documentation**: Swagger
+- **API Documentation**: Swagger/OpenAPI
 - **AI Integration**: Google's Gemini API
 
 ## 🚀 Getting Started
@@ -54,60 +49,85 @@ A powerful, scalable backend service for the MiniCRM application, built with Nod
 - Redis
 - Google OAuth credentials
 
-### Environment Variables
+### Environment Setup 🛠️
 
-Create a `.env` file in the root directory with the following variables:
-
+1. Create a `.env` file in the root directory:
 \`\`\`env
+# Database Configuration
 MONGO_URI=your_mongodb_connection_string
-GOOGLE_CLIENT_ID=your_google_client_id
-PORT=5000
-JWT_SECRET=your_jwt_secret
-GEMINI_API=your_gemini_api_key
 REDIS_URL=your_redis_url
-BACKEND_URL=your_backend_url
-FRONTEND_URL=your_frontend_url
+
+# Authentication
+GOOGLE_CLIENT_ID=your_google_client_id
+JWT_SECRET=your_jwt_secret
+
+# API Keys
+GEMINI_API=your_gemini_api_key
+
+# Application Settings
+PORT=5000
+BACKEND_URL=http://localhost:5000
+FRONTEND_URL=http://localhost:3000
 \`\`\`
 
-### Installation
+### Installation Steps 📥
 
-1. Clone the repository:
-\`\`\`bash
-git clone <repository-url>
-cd miniCRM/backend
-\`\`\`
+1. **Clone the Repository**
+   ```powershell
+   git clone https://github.com/radhikasinghal/miniCRM.git
+   Set-Location miniCRM/backend
+   ```
 
-2. Install dependencies:
-\`\`\`bash
-npm install
-\`\`\`
+2. **Install Dependencies**
+   ```powershell
+   npm install
+   ```
 
-3. Start the server:
-\`\`\`bash
-npm start
-\`\`\`
-
-For development:
-\`\`\`bash
-npm run dev
-\`\`\`
+3. **Start the Application**
+   - For production:
+     ```powershell
+     npm start
+     ```
+   - For development (with hot-reload):
+     ```powershell
+     npm run dev
+     ```
 
 ## 📁 Project Structure
 
-\`\`\`
-src/
-├── apis/
-│   ├── controllers/    # Request handlers
-│   ├── routes/         # API route definitions
-│   └── services/       # Business logic
-├── middlewares/        # Custom middleware
-├── models/            # Database models
-└── utils/             # Utility functions
-\`\`\`
+```plaintext
+backend/
+├── src/
+│   ├── apis/
+│   │   ├── controllers/     # Request handlers and business logic
+│   │   │   ├── campaignController.js
+│   │   │   ├── customerController.js
+│   │   │   ├── orderController.js
+│   │   │   └── ...
+│   │   ├── routes/         # API route definitions and documentation
+│   │   │   ├── campaignRoutes.js
+│   │   │   ├── customerRoutes.js
+│   │   │   └── ...
+│   │   └── services/       # Business logic and external services
+│   │       ├── campaignService.js
+│   │       ├── messageQueueService.js
+│   │       └── ...
+│   ├── middlewares/        # Custom middleware (auth, validation)
+│   │   └── auth.js
+│   ├── models/            # Database models and schemas
+│   │   ├── Campaign.js
+│   │   ├── Customer.js
+│   │   └── ...
+│   └── utils/             # Utility functions and helpers
+│       ├── messageUtils.js
+│       └── redisClient.js
+├── server.js              # Application entry point
+└── package.json          # Project dependencies and scripts
+```
 
 ## 🔗 API Documentation
 
-API documentation is available at `/api-docs` when the server is running. Built with Swagger for easy exploration and testing of endpoints.
+API documentation is available at `/api-docs` when the server is running. Built with Swagger/OpenAPI for easy exploration and testing of endpoints.
 
 ### Main API Endpoints
 
@@ -178,6 +198,10 @@ Key dependencies include:
 3. Commit your changes
 4. Push to the branch
 5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 👥 Author
 

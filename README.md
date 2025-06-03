@@ -197,7 +197,7 @@ Key dependencies include:
 
 ## 👥 Author
 
-Radhika Singhal
+Radhika Singla
 
 ## 🙏 Acknowledgments
 
